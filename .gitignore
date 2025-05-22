@@ -1,0 +1,12 @@
+# OAuth tokens & secrets
+credentials.json
+token.pickle
+client_secret_*.json
+GoogleClientSecret.txt
+
+# Mac system files
+.DS_Store
+
+# Python crap
+__pycache__/
+*.pyc
