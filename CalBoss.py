@@ -33,7 +33,7 @@ from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow      import InstalledAppFlow
 
 VERSION = 'v0.1.0dev-beta'
-SCOPES  = ['https://www.googleapis.com/auth/calendar.readonly']
+SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 ###############################################################################
 #
@@ -197,13 +197,11 @@ def PrintHelp():
       "🗑️ Clear your calendar with --clear, but only if you're feeling brave.",
       "👀 Check your week every Monday. Stay ready, not reactive.",
       "🧼 Keep your backup fresh with --export — future you will thank you.",
-      "💬 Add your therapist as an event. Normalize emotional maintenance.",
-      "🌀 Spiral sessions are valid events. So is sexy time. #NoShame",
       "⏰ Reminders aren’t for the forgetful — they’re for the focused.",
-      "📆 If it’s not in CalBoss, it’s not happening. Period."]
+      "📆 If it’s not in the calendar, it’s not happening."]
 
     helpText = """\
-CalBoss: Google calendar integration for the command line.  Stay organized. 📅 ✨ 
+CalBoss: Google calendar integration for the command line. 📅 ✨ 
 
 Usage:
   CalBoss [options]
@@ -391,8 +389,166 @@ def Main():
                     print("")
 
 
+###############################################################################
+#
+# Procedure   : AddEventToGoogleCalendar()
+#
+# Description : Adds event to Google Calendar using the Calendar API.
+#             : Requires date, start/end time, and summary.
+#             : Optional reminder in 'Xm' or 'Xh' format for popup alerts.
+#
+# Input       : summary   - string - Event description
+#             : date      - string - Event date (YYYY-MM-DD)
+#             : starttime - string - Start time (HH:MM, 24hr)
+#             : endtime   - string - End time (HH:MM, 24hr)
+#             : reminder  - string - Optional (e.g. '15m', '1h')
+#
+# Returns     : -none- 
+#
+###############################################################################
+
+def AddEventToGoogleCalendar(summary, date, start_time, end_time, reminder=None):
+
+    service = GetCalendarService()
+
+    # build full datetime in RFC3339 format
+    startDatetime = f"{date}T{start_time}:00"
+    endDatetime    = f"{date}T{end_time}:00"
+
+    event = {
+        "summary": summary,
+        "start": {"dateTime": startDatetime, "timeZone": "America/New_York"},
+        "end":   {"dateTime": endDatetime,   "timeZone": "America/New_York"},
+    }
+
+    # reminder (optional)
+    if reminder:
+
+        amount = int(reminder[:-1])
+        unit = reminder[-1]
+        minutes = amount * 60 if unit == 'h' else amount
+
+        event["reminders"] = {
+            "useDefault": False,
+            "overrides": [{"method": "popup", "minutes": minutes}]
+        }
+
+    # api calls    
+    createdEvent = service.events().insert(calendarId='primary', body=event).execute()
+    print(f"✅ [INFO] Event created: {createdEvent.get('htmlLink')}")
+
+
+###############################################################################
+#
+# Procedure   : Main()
+#
+# Description : Entry point.
+#
+# Input       : -none-    
+#              
+# Returns     : -none-    
+#
+###############################################################################
+
+def Main():
+
+    args = ParseArgs()
+
+    if args.help:
+        PrintHelp()
+        return
+
+    print("🌤️r  Fetching CalBoss command ...\n")
+
+    if args.version:
+        print("📆 CalBoss Version " + VERSION)
+        return
+
+    #
+    # --today
+    #
+
+    if args.today:
+        print(f"📅  Today’s Schedule ({datetime.now().strftime('%b %d')})\n")
+
+        service = GetCalendarService()
+        events = FetchTodayEvents(service)
+
+        if not events:
+            print("😴  No events scheduled for today.")
+
+        else:
+            for event in events:
+                start     = event['start'].get('dateTime', event['start'].get('date'))
+                summary   = event.get('summary', '(No Title)')
+                location  = event.get('location', '')
+                startTime = datetime.fromisoformat(start).strftime("%I:%M %p") if 'T' in start else "All Day"
+
+                print(f"🕘 {startTime} - {summary}")
+
+                if location:
+                    print(f"📍 {location}")
+
+                print("")
+
+    #
+    # --week
+    #
+    elif args.week:
+        print(f"📆  Weekly Schedule Starting {datetime.now().strftime('%b %d')}\n")
+
+        service = GetCalendarService()
+        weekEvents = FetchWeekEvents(service)
+
+        if not weekEvents:
+            print("😴  No events scheduled this week.")
+
+        else:
+            for day in weekEvents:
+                print(f"📅  {day}")
+
+                for event in weekEvents[day]:
+                    start    = event['start'].get('dateTime', event['start'].get('date'))
+                    summary  = event.get('summary', '(No Title)')
+                    location = event.get('location', '')
+                    timeStr  = datetime.fromisoformat(start).strftime("%I:%M %p") if 'T' in start else "All Day"
+
+                    print(f"🕘 {timeStr} - {summary}")
+
+                    if location:
+                        print(f"📍 {location}")
+
+                    print("")
+
+    #
+    # --add
+    #
+
     elif args.add:
-        print("[INFO] Hello world!")
+
+        if not args.date or not args.starttime or not args.endtime:
+
+            print("[ERROR] --add requires --date, --starttime, and --endtime")
+            return
+
+        event = {
+            "summary": args.add,
+            "date": args.date,
+            "starttime": args.starttime,
+            "endtime": args.endtime,
+            "reminder": args.reminder if args.reminder else "none"
+        }
+
+        AddEventToGoogleCalendar(
+          summary=args.add,
+          date=args.date,
+          start_time=args.starttime,
+          end_time=args.endtime,
+          reminder=args.reminder
+        )
+
+        print(f"✅ [INFO] Event added: '{args.add}' on {args.date} from {args.starttime} to {args.endtime}")
+
 
 if __name__ == "__main__":
     Main()
