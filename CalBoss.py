@@ -189,16 +189,19 @@ def FetchWeekEvents(service):
 
 def PrintHelp():
 
+    # these came from some random inspirational website on the importance
+    # of having a digital calendar ... lost the url.
     proTips = [ "📅 Add your events with --date and --starttime to stay in boss mode.",
-      "🔥 Repeating events? Use --repeat and never miss leg day again.",
-      "🧠 Block off 'focus hours' on your calendar to actually get sh*t done.",
+      "🔥 Repeating events? Use --repeat and never miss it again.",
+      "🧠 Block off 'focus hours' on your calendar to get sh*t done.",
       "☕ Schedule your breaks. No one hustles non-stop without burning out.",
-      "📍 Use event notes to track locations, URLs, or secret pizza spots.",
+      "📍 Use event notes to track locations, URLs, or secret food spots.",
       "🗑️ Clear your calendar with --clear, but only if you're feeling brave.",
-      "👀 Check your week every Monday. Stay ready, not reactive.",
-      "🧼 Keep your backup fresh with --export — future you will thank you.",
+      "👀 Check your week every Monday. Be proactive, not reactive.",
+      "🧼 Keep a backup with --export — you future self will thank you.",
       "⏰ Reminders aren’t for the forgetful — they’re for the focused.",
-      "📆 If it’s not in the calendar, it’s not happening."]
+      "📆 If it’s not in the calendar, it’s not happening.",
+      "🛑 Book a full day with --allday"]
 
     helpText = """\
 CalBoss: Google calendar integration for the command line. 📅 ✨ 
@@ -213,6 +216,7 @@ Usage:
   --date YYYY-MM-DD              Set date for event (required with --add).
   --starttime HH:MM              Start time (24hr or AM/PM).
   --endtime HH:MM                End time (24hr or AM/PM).
+  --allday                       All day event. 
   --reminder <duration>          Reminder before event (e.g. 15m, 1h).
   --remove <event_id>            Delete an event by ID.
   --clear                        Clear today's events (asks first).
@@ -250,6 +254,7 @@ Examples:
 """
     print(helpText + random.choice(proTips) + "\n")
 
+
 ###############################################################################
 #
 # Procedure   : ParseArgs()
@@ -271,17 +276,18 @@ def ParseArgs():
     )
 
     # core features
-    parser.add_argument("--today",  action="store_true", help="Show today's schedule.")
-    parser.add_argument("--week",   action="store_true", help="View full Monday–Sunday overview.")
-    parser.add_argument("--add",    type=str,            help='Add an event (e.g. "Call with Lisa at 1PM").')
-    parser.add_argument("--date", type=str, help="Date of event (YYYY-MM-DD)")
-    parser.add_argument("--starttime", type=str, help="Start time (e.g. 13:00 or 1PM)")
-    parser.add_argument("--endtime", type=str, help="End time (e.g. 14:00 or 2PM)")
-    parser.add_argument("--reminder", type=str, help="Reminder before event (e.g. 15m, 1h)")
-    parser.add_argument("--remove", type=int,            help="Delete an event by ID.")
-    parser.add_argument("--clear",  action="store_true", help="Clear today's events (asks first).")
-    parser.add_argument("--note",   nargs=2,             help='Add note to an event. Usage: --note <id> "Your note".')
-    parser.add_argument("--repeat", action="store_true", help="Add repeating events (weekly, monthly).")
+    parser.add_argument("--today",     action="store_true", help="Show today's schedule.")
+    parser.add_argument("--week",      action="store_true", help="View full Monday–Sunday overview.")
+    parser.add_argument("--add",       type=str,            help='Add an event (e.g. "Call with Lisa at 1PM").')
+    parser.add_argument("--date",      type=str,            help="Date of event (YYYY-MM-DD)")
+    parser.add_argument("--starttime", type=str,            help="Start time (e.g. 13:00 or 1PM)")
+    parser.add_argument("--endtime",   type=str,            help="End time (e.g. 14:00 or 2PM)")
+    parser.add_argument("--allday",    action="store_true", help="Add an all-day event (no start or end time needed)")
+    parser.add_argument("--reminder",  type=str,            help="Reminder before event (e.g. 15m, 1h)")
+    parser.add_argument("--remove",    type=int,            help="Delete an event by ID.")
+    parser.add_argument("--clear",     action="store_true", help="Clear today's events (asks first).")
+    parser.add_argument("--note",      nargs=2,             help='Add note to an event. Usage: --note <id> "Your note".')
+    parser.add_argument("--repeat",    action="store_true", help="Add repeating events (weekly, monthly).")
 
     # birthday support 
     parser.add_argument("--bday-add",        type=str,            help='Add a birthday (e.g. "Lisa 03/29").')
@@ -346,7 +352,6 @@ def Main():
 
         else:
             for event in events:
-
                 start     = event['start'].get('dateTime', event['start'].get('date'))
                 summary   = event.get('summary', '(No Title)')
                 location  = event.get('location', '')
@@ -389,52 +394,76 @@ def Main():
                     print("")
 
 
-###############################################################################
+##############################################################################
 #
 # Procedure   : AddEventToGoogleCalendar()
 #
-# Description : Adds event to Google Calendar using the Calendar API.
-#             : Requires date, start/end time, and summary.
-#             : Optional reminder in 'Xm' or 'Xh' format for popup alerts.
+# Description : Adds an event to Google Calendar via API.
+#             : Supports timed or all-day events.
+#             : Optional reminder in 'Xm' or 'Xh' for popup alerts.
 #
 # Input       : summary   - string - Event description
 #             : date      - string - Event date (YYYY-MM-DD)
-#             : starttime - string - Start time (HH:MM, 24hr)
-#             : endtime   - string - End time (HH:MM, 24hr)
-#             : reminder  - string - Optional (e.g. '15m', '1h')
+#             : startTime - string - Start time (HH:MM, 24hr or AM/PM) [optional if allDay]
+#             : endTime   - string - End time (HH:MM, 24hr or AM/PM) [optional if allDay]
+#             : reminder   - string - Optional (e.g. '15m', '1h')
+#             : allDay    - bool   - If True, creates an all-day event.
 #
-# Returns     : -none- 
+# Returns     : -none-
 #
 ###############################################################################
 
-def AddEventToGoogleCalendar(summary, date, start_time, end_time, reminder=None):
+def AddEventToGoogleCalendar(summary, date, startTime=None, endTime=None, reminder=None, allDay=False):
 
     service = GetCalendarService()
 
-    # build full datetime in RFC3339 format
-    startDatetime = f"{date}T{start_time}:00"
-    endDatetime    = f"{date}T{end_time}:00"
+    #
+    # allDay: google makes you specify an end time.
+    #
 
-    event = {
-        "summary": summary,
-        "start": {"dateTime": startDatetime, "timeZone": "America/New_York"},
-        "end":   {"dateTime": endDatetime,   "timeZone": "America/New_York"},
-    }
-
-    # reminder (optional)
-    if reminder:
-
-        amount = int(reminder[:-1])
-        unit = reminder[-1]
-        minutes = amount * 60 if unit == 'h' else amount
-
-        event["reminders"] = {
-            "useDefault": False,
-            "overrides": [{"method": "popup", "minutes": minutes}]
+    if allDay:
+        event = {
+            "summary": summary,
+            "start"  : {"date": date},
+            "end"    : {"date": date},
         }
 
-    # api calls    
+    #
+    # not allDay
+    #
+
+    else:
+        startTime = f"{date}T{startTime}:00"
+        endTime   = f"{date}T{endTime}:00"
+
+        event = {
+            "summary": summary,
+            "start"  : {"dateTime": startTime, "timeZone": "America/New_York"},
+            "end"    : {"dateTime": endTime,   "timeZone": "America/New_York"},
+        }
+
+    #
+    # reminder
+    #
+
+    if reminder:
+
+        try:
+            amount  = int(reminder[:-1])
+            unit    = reminder[-1]
+            minutes = amount * 60 if unit == 'h' else amount
+
+            event["reminders"] = {
+                "useDefault": False,
+                "overrides" : [{"method": "popup", "minutes": minutes}]
+            }
+
+        except:
+            print(f"⚠️ [WARNING] Invalid reminder format: '{reminder}'. Use '15m' or '1h'.")
+
+    # create event using google api
     createdEvent = service.events().insert(calendarId='primary', body=event).execute()
+
     print(f"✅ [INFO] Event created: {createdEvent.get('htmlLink')}")
 
 
@@ -467,12 +496,11 @@ def Main():
     #
     # --today
     #
-
     if args.today:
         print(f"📅  Today’s Schedule ({datetime.now().strftime('%b %d')})\n")
 
         service = GetCalendarService()
-        events = FetchTodayEvents(service)
+        events  = FetchTodayEvents(service)
 
         if not events:
             print("😴  No events scheduled for today.")
@@ -497,7 +525,7 @@ def Main():
     elif args.week:
         print(f"📆  Weekly Schedule Starting {datetime.now().strftime('%b %d')}\n")
 
-        service = GetCalendarService()
+        service    = GetCalendarService()
         weekEvents = FetchWeekEvents(service)
 
         if not weekEvents:
@@ -523,31 +551,51 @@ def Main():
     #
     # --add
     #
-
     elif args.add:
 
-        if not args.date or not args.starttime or not args.endtime:
+        if args.allday:
+            if not args.date:
+                print("[ERROR] --allday requires --date")
+                return
 
-            print("[ERROR] --add requires --date, --starttime, and --endtime")
-            return
+            event = {
+                "summary" : args.add,
+                "date"    : args.date,
+                "allday"  : True,
+                "reminder": args.reminder if args.reminder else "none"
+            }
 
-        event = {
-            "summary": args.add,
-            "date": args.date,
-            "starttime": args.starttime,
-            "endtime": args.endtime,
-            "reminder": args.reminder if args.reminder else "none"
-        }
+            AddEventToGoogleCalendar(
+                summary=args.add,
+                date=args.date,
+                allDay=True,
+                reminder=args.reminder
+            )
 
-        AddEventToGoogleCalendar(
-          summary=args.add,
-          date=args.date,
-          start_time=args.starttime,
-          end_time=args.endtime,
-          reminder=args.reminder
-        )
+            print(f"✅ [INFO] All-day event added: '{args.add}' on {args.date}.")
 
-        print(f"✅ [INFO] Event added: '{args.add}' on {args.date} from {args.starttime} to {args.endtime}")
+        else:
+            if not args.date or not args.starttime or not args.endtime:
+                print("[ERROR] --add requires --date, --starttime, and --endtime (unless --allday is used)")
+                return
+
+            event = {
+                "summary"  : args.add,
+                "date"     : args.date,
+                "starttime": args.starttime,
+                "endtime"  : args.endtime,
+                "reminder" : args.reminder if args.reminder else "none"
+            }
+
+            AddEventToGoogleCalendar(
+                summary=args.add,
+                date=args.date,
+                start_time=args.starttime,
+                end_time=args.endtime,
+                reminder=args.reminder
+            )
+
+            print(f"✅ [INFO] Event added: '{args.add}' on {args.date} from {args.starttime} to {args.endtime}")
 
 
 if __name__ == "__main__":
