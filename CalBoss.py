@@ -196,7 +196,6 @@ def PrintHelp():
       "🧠 Block off 'focus hours' on your calendar to get sh*t done.",
       "☕ Schedule your breaks. No one hustles non-stop without burning out.",
       "📍 Use event notes to track locations, URLs, or secret food spots.",
-      "🗑️ Clear your calendar with --clear, but only if you're feeling brave.",
       "👀 Check your week every Monday. Be proactive, not reactive.",
       "🧼 Keep a backup with --export — you future self will thank you.",
       "⏰ Reminders aren’t for the forgetful — they’re for the focused.",
@@ -222,7 +221,6 @@ Usage:
   --location "<place>"           Include a location with your event.
   --reminder <duration>          Reminder before event (e.g. 15m, 1h).
   --remove <event_id>            Delete an event by ID.
-  --clear                        Clear today's events (asks first).
   --note <event_id> "<note>"     Add a note to an existing event.
   --repeat                       Add repeating events (e.g. weekly, monthly).
 
@@ -292,7 +290,6 @@ def ParseArgs():
     parser.add_argument("--location",  type=str,            help="Add a location to your event")
     parser.add_argument("--reminder",  type=str,            help="Reminder before event (e.g. 15m, 1h)")
     parser.add_argument("--remove",    type=str,            help="Remove an event by ID.")
-    parser.add_argument("--clear",     action="store_true", help="Clear today's events (asks first).")
     parser.add_argument("--note",      nargs=2,             help='Add note to an event. Usage: --note <id> "Your note".')
     parser.add_argument("--repeat",    action="store_true", help="Add repeating events (weekly, monthly).")
 
