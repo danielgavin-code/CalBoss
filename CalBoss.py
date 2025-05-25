@@ -289,9 +289,9 @@ def ParseArgs():
     parser.add_argument("--starttime", type=str,            help="Start time (e.g. 13:00 or 1PM)")
     parser.add_argument("--endtime",   type=str,            help="End time (e.g. 14:00 or 2PM)")
     parser.add_argument("--allday",    action="store_true", help="Add an all-day event (no start or end time needed)")
-    parser.add_argument("--location",  type=str, help="Add a location to your event")
+    parser.add_argument("--location",  type=str,            help="Add a location to your event")
     parser.add_argument("--reminder",  type=str,            help="Reminder before event (e.g. 15m, 1h)")
-    parser.add_argument("--remove",    type=int,            help="Delete an event by ID.")
+    parser.add_argument("--remove",    type=str,            help="Remove an event by ID.")
     parser.add_argument("--clear",     action="store_true", help="Clear today's events (asks first).")
     parser.add_argument("--note",      nargs=2,             help='Add note to an event. Usage: --note <id> "Your note".')
     parser.add_argument("--repeat",    action="store_true", help="Add repeating events (weekly, monthly).")
@@ -600,6 +600,7 @@ def Main():
     #
     # --add
     #
+
     elif args.add:
 
         if args.allday:
@@ -646,6 +647,20 @@ def Main():
             )
 
             print(f"✅ [INFO] Event added: '{args.add}' on {args.date} from {args.starttime} to {args.endtime}")
+
+    #
+    # --remove
+    #
+
+    elif args.remove:
+        service = GetCalendarService()
+
+        try:
+            service.events().delete(calendarId='primary', eventId=args.remove).execute()
+            print(f"🗑️ [INFO] Event {args.remove} deleted.")
+
+        except Exception as e:
+            print(f"❌ [ERROR] Could not delete event: {e}")
 
 
 if __name__ == "__main__":
