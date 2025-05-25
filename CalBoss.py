@@ -241,7 +241,7 @@ Usage:
   --vibe-check                   Show today’s time breakdown + free hours.
   --search "<keyword>"           Search upcoming events by keyword in title, notes, or location.
   --search-all "<keyword>"       Search your full calendar — past, present, future. Total recall.
-
+  --showids                      Display event IDs in schedule output for reference.
 
 🔧 Other:
   --export                       Save all data to calboss-backup.json.
@@ -310,6 +310,7 @@ def ParseArgs():
     parser.add_argument("--insights",   action="store_true", help="Analyze patterns (best/worst days).")
     parser.add_argument("--vibe-check", action="store_true", help="Show today's time breakdown + free hours.")
     parser.add_argument("--search",     type=str,            help="Search events by keyword")
+    parser.add_argument("--showids",    action="store_true", help="Display event IDs for reference and deletion.")
 
     # utility
     parser.add_argument("--export",  action="store_true", help="Save all data to calboss-backup.json.")
@@ -360,6 +361,7 @@ def Main():
 
         else:
             for event in events:
+
                 start     = event['start'].get('dateTime', event['start'].get('date'))
                 summary   = event.get('summary', '(No Title)')
                 location  = event.get('location', '')
@@ -369,6 +371,13 @@ def Main():
 
                 if location:
                     print(f"📍 {location}")
+
+                if args.showids:
+
+                    eventId = event.get('id', None)
+
+                    if event_id:
+                        print(f"🆔 {eventId}")
 
                 print()
 
@@ -536,21 +545,27 @@ def Main():
         else:
             for event in events:
 
-                start = event['start'].get('dateTime', event['start'].get('date'))
-                summary = event.get('summary', '(No Title)')
+                start    = event['start'].get('dateTime', event['start'].get('date'))
+                summary  = event.get('summary', '(No Title)')
                 location = event.get('location', '')
-                timeStr = FormatTime(start) if 'T' in start else "All Day"
+                timeStr  = FormatTime(start) if 'T' in start else "All Day"
 
                 print(f"🕘 {timeStr} - {summary}")
 
                 if location:
                     print(f"📍 {location}")
 
+                eventId = event.get('id', None)
+
+                if args.showids and eventId:
+                    print(f"🆔 {eventId}")
+
                 print("")
 
     #
     # --week
     #
+
     elif args.week:
         print(f"📆  Weekly Schedule Starting {datetime.now().strftime('%b %d')}\n")
 
@@ -574,6 +589,11 @@ def Main():
 
                     if location:
                         print(f"📍 {location}")
+
+                    eventId = event.get('id', None)
+
+                    if args.showids and eventId:
+                        print(f"🆔 {eventId}")
 
                     print("")
 
