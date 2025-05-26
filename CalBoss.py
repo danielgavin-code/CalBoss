@@ -211,47 +211,56 @@ Usage:
   CalBoss [options]
 
 📆 Event Management:
-  --today                        Show today's schedule.
-  --week                         View full Monday–Sunday overview.
-  --add "<event>"                Add an event (e.g. "Call with Lisa at 1PM").
-  --date YYYY-MM-DD              Set date for event (required with --add).
-  --starttime HH:MM              Start time (24hr or AM/PM).
-  --endtime HH:MM                End time (24hr or AM/PM).
-  --allday                       All day event. 
-  --location "<place>"           Include a location with your event.
-  --reminder <duration>          Reminder before event (e.g. 15m, 1h).
-  --remove <event_id>            Delete an event by ID.
-  --note <event_id> "<note>"     Add a note to an existing event.
-  --repeat                       Add repeating events (e.g. weekly, monthly).
+  --today                          Show today's schedule.
+  --week                           View full Monday–Sunday overview.
+  --add "<event>"                  Add an event (e.g. "Call with Lisa at 1PM").
+  --date YYYY-MM-DD                Set date for event (required with --add).
+  --starttime HH:MM                Start time (24hr or AM/PM).
+  --endtime HH:MM                  End time (24hr or AM/PM).
+  --allday                         All day event. 
+  --location "<place>"             Include a location with your event.
+  --reminder <duration>            Reminder before event (e.g. 15m, 1h).
+  --remove <event_id>              Delete an event by ID.
+  --note <event_id> "<note>"       Add a note to an existing event.
+  --repeat                         Add repeating events (e.g. weekly, monthly).
 
 🎂 Birthday:
-  --bday-add "<Name> MM/DD"      Add a birthday (auto-repeats yearly).
-  --bday-remove "<Name>"         Remove a birthday.
-  --bday-show                    Show birthdays this month.
-  --bday-show --today            Show today's birthdays.
-  --bday-show --week             Show birthdays in the next 7 days.
-  --bday-show --all              Show all saved birthdays.
+  --bday-add "<Name> MM/DD"        Add a birthday (auto-repeats yearly).
+  --bday-remove "<Name>"           Remove a birthday.
+  --bday-show                      Show birthdays this month.
+  --bday-show --today              Show today's birthdays.
+  --bday-show --week               Show birthdays in the next 7 days.
+  --bday-show --all                Show all saved birthdays.
+
+👫 Catch-Up Mode:
+  --catchup-suggest "<Name, ...>"  Suggests when to check in with each person.
+  --catchup-add "<Name>" 
+       --date YYYY-MM-DD           Schedule a personal check-in. Adds a [Catch-Up] event.
+       [--reminder <time>]         (Optional) Set a pre-check-in reminder.
+  --catchup-list                   Show upcoming catch-up events.
+  --catchup-clear "<Name>"         Remove someone from your catch-up list.
 
 📊 Overview & Planning:
-  --summary                      Show usage summary: hours booked vs free.
-  --focus                        Filter for priority events only.
-  --insights                     Analyze patterns (best/worst days).
-  --vibe-check                   Show today’s time breakdown + free hours.
-  --search "<keyword>"           Search upcoming events by keyword in title, notes, or location.
-  --search-all "<keyword>"       Search your full calendar — past, present, future. Total recall.
-  --showids                      Display event IDs in schedule output for reference.
+  --summary                        Show usage summary: hours booked vs free.
+  --focus                          Filter for priority events only.
+  --insights                       Analyze patterns (best/worst days).
+  --vibe-check                     Show today’s time breakdown + free hours.
+  --search "<keyword>"             Search upcoming events by keyword in title, notes, or location.
+  --search-all "<keyword>"         Search your full calendar — past, present, future. Total recall.
+  --showids                        Display event IDs in schedule output for reference.
 
 🔧 Other:
-  --export                       Save all data to calboss-backup.json.
-  --import <file>                Load data from a backup.
-  --version                      Show CalBoss version.
-  --help                         You’re looking at it.
+  --export                         Save all data to calboss-backup.json.
+  --import <file>                  Load data from a backup.
+  --version                        Show CalBoss version.
+  --help                           You’re looking at it.
 
 Examples:
   CalBoss --today
   CalBoss --add "Coffee with Sarah" --date 2025-05-24 --starttime 14:00 --endtime 15:00 --reminder 30m
   CalBoss --bday-add "Charmaine 07/03"
   CalBoss --bday-show --week
+  CalBoss --catchup-suggest "Lisa, Nick, Aunt Gina"
   CalBoss --focus --week
 
 ✨ Pro Tip:
