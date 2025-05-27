@@ -32,6 +32,7 @@ from googleapiclient.discovery      import build
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow      import InstalledAppFlow
 
+
 VERSION = 'v0.1.0dev-beta'
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
@@ -435,14 +436,81 @@ def AddEventToGoogleCalendar(summary, date, startTime=None, endTime=None, remind
 
 def FormatTime(input):
 
-    from datetime import datetime
-
     try:
         dt = datetime.fromisoformat(input.replace('Z', '+00:00'))
         return dt.strftime("%I:%M %p")
 
     except:
-        return "🚫 [ERROR] Invalid Time"
+        return "❌ [ERROR] Invalid Time"
+
+
+###############################################################################
+#
+# Procedure   : GetGoogleCredentials()
+#
+# Description : Google OAuth2 authentication.
+#             : Returns valid credential object for using Google Calendar API.
+#             : Uses 'token.pickle' for token caching and refresh logic.
+#
+# Input       : -none-
+#
+# Returns     : credentials - Google object to access Calendar API.
+#
+###############################################################################
+
+def GetGoogleCredentials():
+
+    credentials = None
+
+    if os.path.exists("token.pickle"):
+        with open("token.pickle", "rb") as token:
+            credentials = pickle.load(token)
+
+    if not credentials or not credentials.valid:
+        if credentials and credentials.expired and credentials.refresh_token:
+            credentials.refresh(Request())
+
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
+            credentials = flow.run_local_server(port=0)
+
+        with open("token.pickle", "wb") as token:
+            pickle.dump(credentials, token)
+
+    return credentials
+
+
+###############################################################################
+#
+# Procedure   : AddNoteToEvent()
+#
+# Description : Updates description field of existing Google Calendar event.
+#
+# Input       : eventId - Unique ID of calendar event.
+#             : note    - Text string to update. 
+#
+# Returns     : True  - Event was successfully updated.
+#             : False - Error occurs. 
+#
+###############################################################################
+
+def AddNoteToEvent(eventId, note):
+
+    try:
+
+        credentials = GetGoogleCredentials() 
+        service     = build("calendar", "v3", credentials=credentials)
+
+        event = service.events().get(calendarId="primary", eventId=eventId).execute()
+        event["description"] = note
+        service.events().update(calendarId="primary", eventId=eventId, body=event).execute()
+
+        return True
+
+    except Exception as e:
+
+        print(f"❌ [EXCEPTION] {e}")
+        return False
 
 
 ###############################################################################
@@ -603,6 +671,20 @@ def Main():
 
         except Exception as e:
             print(f"❌ [ERROR] Could not delete event: {e}")
+
+    #
+    # --note
+    #
+
+    elif args.note:
+        event_id, note_text = args.note
+        success = AddNoteToEvent(event_id, note_text)
+
+        if success:
+            print(f"📝 [INFO] Note added to event {event_id}: \"{note_text}\"")
+
+        else:
+            print(f"❌ [ERROR] Failed to add note to event {event_id}")
 
 
 if __name__ == "__main__":
