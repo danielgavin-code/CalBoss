@@ -423,6 +423,30 @@ def AddEventToGoogleCalendar(summary, date, startTime=None, endTime=None, remind
 
 ###############################################################################
 #
+# Procedure   : FormatTime(time_str)
+#
+# Description : Takes an ISO 8601 datetime string and makes it human readable. 
+#
+# Input       : input - Datetime string (e.g., "2025-05-27T14:00:00Z")
+#
+# Returns     : string - time in format of "HH:MM AM/PM"
+#
+###############################################################################
+
+def FormatTime(input):
+
+    from datetime import datetime
+
+    try:
+        dt = datetime.fromisoformat(input.replace('Z', '+00:00'))
+        return dt.strftime("%I:%M %p")
+
+    except:
+        return "🚫 [ERROR] Invalid Time"
+
+
+###############################################################################
+#
 # Procedure   : Main()
 #
 # Description : Entry point.
