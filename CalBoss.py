@@ -555,10 +555,11 @@ def Main():
         else:
             for event in events:
 
-                start    = event['start'].get('dateTime', event['start'].get('date'))
-                summary  = event.get('summary', '(No Title)')
-                location = event.get('location', '')
-                timeStr  = FormatTime(start) if 'T' in start else "All Day"
+                start       = event['start'].get('dateTime', event['start'].get('date'))
+                summary     = event.get('summary', '(No Title)')
+                location    = event.get('location', '')
+                timeStr     = FormatTime(start) if 'T' in start else "All Day"
+                description = event.get("description", "").strip()
 
                 print(f"🕘 {timeStr} - {summary}")
 
@@ -566,6 +567,9 @@ def Main():
                     print(f"📍 {location}")
 
                 eventId = event.get('id', None)
+
+                if description:
+                    print(f"📝 Note: {description}")
 
                 if args.showids and eventId:
                     print(f"🆔 {eventId}")
@@ -590,10 +594,12 @@ def Main():
                 print(f"📅  {day}")
 
                 for event in weekEvents[day]:
-                    start    = event['start'].get('dateTime', event['start'].get('date'))
-                    summary  = event.get('summary', '(No Title)')
-                    location = event.get('location', '')
-                    timeStr  = datetime.fromisoformat(start).strftime("%I:%M %p") if 'T' in start else "All Day"
+
+                    start       = event['start'].get('dateTime', event['start'].get('date'))
+                    summary     = event.get('summary', '(No Title)')
+                    location    = event.get('location', '')
+                    timeStr     = datetime.fromisoformat(start).strftime("%I:%M %p") if 'T' in start else "All Day"
+                    description = event.get("description", "").strip()
 
                     print(f"🕘 {timeStr} - {summary}")
 
@@ -601,6 +607,9 @@ def Main():
                         print(f"📍 {location}")
 
                     eventId = event.get('id', None)
+
+                    if description:
+                        print(f"📝 Note: {description}")
 
                     if args.showids and eventId:
                         print(f"🆔 {eventId}")
