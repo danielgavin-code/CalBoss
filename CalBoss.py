@@ -223,7 +223,7 @@ Usage:
   --reminder <duration>            Reminder before event (e.g. 15m, 1h).
   --remove <event_id>              Delete an event by ID.
   --note <event_id> "<note>"       Add a note to an existing event.
-  --repeat                         Add repeating events (e.g. weekly, monthly).
+  --repeat                         Repeat events (e.g. daily, weekly, monthly, yearly).
 
 🎂 Birthday:
   --bday-add "<Name> MM/DD"        Add a birthday (auto-repeats yearly).
@@ -301,7 +301,8 @@ def ParseArgs():
     parser.add_argument("--reminder",  type=str,            help="Reminder before event (e.g. 15m, 1h)")
     parser.add_argument("--remove",    type=str,            help="Remove an event by ID.")
     parser.add_argument("--note",      nargs=2,             help='Add note to an event. Usage: --note <id> "Your note".')
-    parser.add_argument("--repeat",    action="store_true", help="Add repeating events (weekly, monthly).")
+    parser.add_argument("--repeat", choices=["daily", "weekly", "monthly", "yearly"],
+                                                            help="Set recurrence frequency for repeating events")
 
     # birthday support 
     parser.add_argument("--bday-add",        type=str,            help='Add a birthday (e.g. "Lisa 03/29").')
@@ -338,20 +339,22 @@ def ParseArgs():
 #             : Supports timed or all-day events.
 #             : Optional reminder in 'Xm' or 'Xh' for popup alerts.
 #             : Optional location for where the event takes place.
+#             : Optional --repeat for recurring events (daily, weekly, etc.).
 #
-# Input       : summary   - string  - Event description
-#             : date      - string  - Event date (YYYY-MM-DD)
-#             : startTime - string  - Start time (HH:MM, 24hr or AM/PM) [optional if allDay]
-#             : endTime   - string  - End time (HH:MM, 24hr or AM/PM) [optional if allDay]
-#             : reminder  - string  - Optional (e.g. '15m', '1h')
-#             : allDay    - boolean - If True, creates an all-day event.
-#             : location  - string  - Optional (e.g. "Moe's Backyard")
+# Input       : summary    - string  - Event description
+#             : date       - string  - Event date (YYYY-MM-DD)
+#             : startTime  - string  - Start time (HH:MM, 24hr or AM/PM) [optional if allDay]
+#             : endTime    - string  - End time (HH:MM, 24hr or AM/PM) [optional if allDay]
+#             : reminder   - string  - Optional (e.g. '15m', '1h')
+#             : allDay     - boolean - If True, creates an all-day event.
+#             : location   - string  - Optional (e.g. "Moe's Backyard")
+#             : repeat     - string  - Optional (e.g. 'daily', 'weekly', 'monthly', 'yearly')
 #
 # Returns     : -none-
 #
 ###############################################################################
 
-def AddEventToGoogleCalendar(summary, date, startTime=None, endTime=None, reminder=None, allDay=False, location=None):
+def AddEventToGoogleCalendar(summary, date, startTime=None, endTime=None, reminder=None, allDay=False, location=None, repeat=None):
 
     service = GetCalendarService()
 
@@ -381,21 +384,18 @@ def AddEventToGoogleCalendar(summary, date, startTime=None, endTime=None, remind
         }
 
     #
-    # location 
+    # location
     #
 
     if location:
         location = location.strip()
         event["location"] = location
-        print(f"📍 [INFO] Location set: {location}")
-
-    # embed in description if NOT handled cleanly (ChatGPT hack)
+        print(f"\U0001F4CD [INFO] Location set: {location}")
 
         desc_text = f"Location: {location.strip()}"
 
         if "description" in event:
             event["description"] += f"\n{desc_text}"
-
         else:
             event["description"] = desc_text
 
@@ -404,7 +404,6 @@ def AddEventToGoogleCalendar(summary, date, startTime=None, endTime=None, remind
     #
 
     if reminder:
-
         try:
             amount  = int(reminder[:-1])
             unit    = reminder[-1]
@@ -416,7 +415,15 @@ def AddEventToGoogleCalendar(summary, date, startTime=None, endTime=None, remind
             }
 
         except:
-            print(f"⚠️ [WARNING] Invalid reminder format: '{reminder}'. Use '15m' or '1h'.")
+            print(f"\u26A0\uFE0F [WARNING] Invalid reminder format: '{reminder}'. Use '15m' or '1h'.")
+
+    #
+    # repeat
+    #
+
+    if repeat:
+        event["recurrence"] = [f"RRULE:FREQ={repeat.upper()}"]
+        print(f"🔁 [INFO] Repeat set: {repeat}")
 
     # create event using google api
     createdEvent = service.events().insert(calendarId='primary', body=event).execute()
@@ -641,7 +648,8 @@ def Main():
                 date=args.date,
                 allDay=True,
                 reminder=args.reminder,
-                location=args.location
+                location=args.location,
+                repeat=args.repeat
             )
 
             print(f"✅ [INFO] All-day event added: '{args.add}' on {args.date}.")
@@ -665,7 +673,8 @@ def Main():
                 startTime=args.starttime,
                 endTime=args.endtime,
                 reminder=args.reminder,
-                location=args.location
+                location=args.location,
+                repeat=args.repeat
             )
 
             print(f"✅ [INFO] Event added: '{args.add}' on {args.date} from {args.starttime} to {args.endtime}")
