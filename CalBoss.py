@@ -381,11 +381,13 @@ def AddEventToGoogleCalendar(summary, date, startTime=None, endTime=None, remind
         }
 
     #
-    # location & description
+    # location 
     #
 
     if location:
-        event["location"] = location.strip()
+        location = location.strip()
+        event["location"] = location
+        print(f"📍 [INFO] Location set: {location}")
 
     # embed in description if NOT handled cleanly (ChatGPT hack)
 
@@ -662,7 +664,8 @@ def Main():
                 date=args.date,
                 startTime=args.starttime,
                 endTime=args.endtime,
-                reminder=args.reminder
+                reminder=args.reminder,
+                location=args.location
             )
 
             print(f"✅ [INFO] Event added: '{args.add}' on {args.date} from {args.starttime} to {args.endtime}")
