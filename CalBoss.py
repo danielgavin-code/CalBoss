@@ -524,6 +524,89 @@ def AddNoteToEvent(eventId, note):
 
 ###############################################################################
 #
+# Procedure   : SaveBirthday()
+#
+# Description : Add a birthday event to Google Calendar.
+#
+# Input       : name  - Name of person
+#               month - Month (int)
+#               day   - Day (int)
+#
+# Returns     : -none-
+#
+###############################################################################
+
+def SaveBirthday(name, month, day):
+
+    service = GetCalendarService()
+
+    today   = datetime.now()
+    year    = today.year
+    dateStr = f"{year}-{month:02d}-{day:02d}"
+
+    event = {
+        "summary"    : f"🎂 {name}'s Birthday",
+        "start"      : {"date": dateStr},
+        "end"        : {"date": dateStr},
+        "recurrence" : ["RRULE:FREQ=YEARLY"],
+        "description": "Birthday Reminder",
+    }
+
+    try:
+        service.events().insert(calendarId='primary', body=event).execute()
+        print(f"✅ [INFO] Birthday event created for {name} on {dateStr}")
+
+    except Exception as e:
+        print(f"❌ [ERROR] Failed to create birthday event: {e}")
+
+
+###############################################################################
+#
+# Procedure   : RemoveBirthday()
+#
+# Description : Remove a birthday event from Google Calendar.
+#
+# Input       : name - Name of person
+#
+# Returns     : -none-
+#
+###############################################################################
+
+def RemoveBirthday(name):
+
+    service = GetCalendarService()
+
+    # let's search 
+    targetSummary = f"🎂 {name}'s Birthday"
+
+    try:
+        eventsResult = service.events().list(
+            calendarId='primary',
+            q=targetSummary,
+            singleEvents=False,
+            maxResults=10
+        ).execute()
+
+        events = eventsResult.get('items', [])
+
+        if not events:
+            print(f"❌ [INFO] No birthday found for {name}")
+            return
+
+        for event in events:
+            if event.get('summary') == targetSummary:
+                service.events().delete(calendarId='primary', eventId=event['id']).execute()
+                print(f"🗑️ [INFO] Birthday removed: {name}")
+                return
+
+        print(f"❌ [INFO] Birthday for {name} not found in matching results.")
+
+    except Exception as e:
+        print(f"❌ [ERROR] Failed to remove birthday: {e}")
+
+
+###############################################################################
+#
 # Procedure   : Main()
 #
 # Description : Entry point.
@@ -706,6 +789,34 @@ def Main():
 
         else:
             print(f"❌ [ERROR] Failed to add note to event {event_id}")
+
+    #
+    # --bday-add
+    #
+
+    if args.bday_add:
+        nameDate = args.bday_add.strip().rsplit(' ', 1)
+
+        if len(nameDate) != 2:
+            print("❌ [ERROR] Invalid format.")
+
+        else:
+            name, dateStr = nameDate
+
+            try:
+                month, day = map(int, dateStr.split('/'))
+                SaveBirthday(name, month, day)
+                print(f"🎂 Birthday added: {name} on {month}/{day}")
+
+            except ValueError:
+                print("❌ [ERROR] Invalid date format (Use MM/DD)")
+
+    #
+    # --bday-remove
+    #
+
+    if args.bday_remove:
+        RemoveBirthday(args.bday_remove)
 
 
 if __name__ == "__main__":
