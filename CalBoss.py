@@ -32,9 +32,8 @@ from googleapiclient.discovery      import build
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow      import InstalledAppFlow
 
-
 VERSION = 'v0.1.0dev-beta'
-SCOPES = ['https://www.googleapis.com/auth/calendar']
+SCOPES  = ['https://www.googleapis.com/auth/calendar']
 
 ###############################################################################
 #
@@ -229,8 +228,6 @@ Usage:
   --bday-add "<Name> MM/DD"        Add a birthday (auto-repeats yearly).
   --bday-remove "<Name>"           Remove a birthday.
   --bday-show                      Show birthdays this month.
-  --bday-show --today              Show today's birthdays.
-  --bday-show --week               Show birthdays in the next 7 days.
   --bday-show --all                Show all saved birthdays.
 
 👫 Catch-Up Mode:
@@ -535,6 +532,7 @@ def AddNoteToEvent(eventId, note):
 # Returns     : -none-
 #
 ###############################################################################
+
 def SaveBirthday(name, month, day):
 
     service = GetCalendarService()
@@ -622,6 +620,158 @@ def RemoveBirthday(name):
 
 ###############################################################################
 #
+# Procedure   : ShowBirthdaysThisMonth()
+#
+# Description : Displays birthdays occurring in the current month.
+#
+# Input       : -none-
+#
+# Returns     : -none-
+#
+###############################################################################
+
+def ShowBirthdaysThisMonth():
+
+    service = GetCalendarService()
+
+    now        = datetime.now()
+    monthStart = datetime(now.year, now.month, 1).isoformat() + 'Z'
+    nextMonth  = (now.replace(day=28) + timedelta(days=4)).replace(day=1)
+    monthEnd   = datetime(nextMonth.year, nextMonth.month, 1).isoformat() + 'Z'
+
+    try:
+        eventsResult = service.events().list(
+            calendarId='primary',
+            timeMin=monthStart,
+            timeMax=monthEnd,
+            singleEvents=True,
+            maxResults=100,
+            orderBy='startTime'
+        ).execute()
+
+        events = eventsResult.get('items', [])
+
+        birthdays = [
+            event for event in events
+            if event.get('summary', '').startswith("🎂 ")
+        ]
+
+        if not birthdays:
+            print("😴 No birthdays this month.")
+            return
+
+        print("🎉 Birthdays This Month:\n")
+
+        for event in birthdays:
+            summary = event.get('summary', '')
+            dateStr = event['start'].get('dateTime', event['start'].get('date'))
+            dateFormatted = datetime.fromisoformat(dateStr).strftime('%b %d')
+            print(f"🎂 {summary[2:]} - {dateFormatted}")
+
+    except Exception as e:
+        print(f"❌ [ERROR] Could not retrieve birthdays: {e}")
+
+
+###############################################################################
+#
+# Procedure   : ShowTodaysBirthdays()
+#
+# Description : Displays only birthdays occurring today.
+#
+# Input       : -none-
+#
+# Returns     : -none-
+#
+###############################################################################
+
+def ShowTodaysBirthdays():
+
+    service = GetCalendarService()
+
+    now        = datetime.now()
+    todayStart = datetime(now.year, now.month, now.day, 0, 0, 0).isoformat() + 'Z'
+    todayEnd   = datetime(now.year, now.month, now.day, 23, 59, 59).isoformat() + 'Z'
+
+    try:
+        eventsResult = service.events().list(
+            calendarId='primary',
+            timeMin=todayStart,
+            timeMax=todayEnd,
+            singleEvents=True,
+            maxResults=20,
+            orderBy='startTime'
+        ).execute()
+
+        events = eventsResult.get('items', [])
+
+        birthdaysToday = [
+            event.get('summary', '')[2:]
+            for event in events
+            if event.get('summary', '').startswith("🎂 ")
+        ]
+
+        if not birthdaysToday:
+            print("😴 No birthdays today.")
+        else:
+            print("🎉 Birthdays Today:\n")
+            for bday in birthdaysToday:
+                print(f"🎂 {bday}")
+
+    except Exception as e:
+        print(f"❌ [ERROR] Could not retrieve today's birthdays: {e}")
+
+
+###############################################################################
+#
+# Procedure   : ShowBirthdaysThisWeek()
+#
+# Description : Shows birthdays occurring in the next 7 days.
+#
+# Input       : -none-
+#
+# Returns     : -none-
+#
+###############################################################################
+
+def ShowBirthdaysThisWeek():
+
+    service = GetCalendarService()
+
+    now      = datetime.now()
+    nextWeek = now + timedelta(days=7)
+
+    timeMin = now.isoformat() + 'Z'
+    timeMax = nextWeek.isoformat() + 'Z'
+
+    try:
+        eventsResult = service.events().list(
+            calendarId='primary',
+            timeMin=timeMin,
+            timeMax=timeMax,
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+
+        events = eventsResult.get('items', [])
+        birthdayEvents = [event for event in events if event.get('summary', '').startswith("🎂")]
+
+        if not birthdayEvents:
+            print("🎉 No birthdays in the next 7 days.")
+            return
+
+        print("🎉 Birthdays This Week:\n")
+        for event in birthdayEvents:
+            start = event['start'].get('dateTime', event['start'].get('date'))
+            dateObj = datetime.fromisoformat(start)
+            name = event['summary'].replace("🎂 ", "").replace("'s Birthday", "")
+            print(f"🎂 {name}'s Birthday - {dateObj.strftime('%b %d')}")
+
+    except Exception as e:
+        print(f"❌ [ERROR] Failed to fetch weekly birthdays: {e}")
+
+
+###############################################################################
+#
 # Procedure   : Main()
 #
 # Description : Entry point.
@@ -647,6 +797,24 @@ def Main():
         return
 
     #
+    # --bday-show-today 
+    # --bday-show-week
+    # takes top priority
+    #
+
+    if args.bday_show_today:
+        ShowTodaysBirthdays()
+        return
+
+    #
+    # --bday-show
+    #
+
+    elif args.bday_show:
+        ShowBirthdaysThisMonth()
+        return
+
+    #
     # --today
     #
 
@@ -657,11 +825,10 @@ def Main():
         events = FetchTodayEvents(service)
 
         if not events:
-            print("😴  No events scheduled for today.")
+            print("😴  No events scheduled for today.\n")
 
         else:
             for event in events:
-
                 start       = event['start'].get('dateTime', event['start'].get('date'))
                 summary     = event.get('summary', '(No Title)')
                 location    = event.get('location', '')
@@ -672,16 +839,34 @@ def Main():
 
                 if location:
                     print(f"📍 {location}")
-
-                eventId = event.get('id', None)
-
                 if description:
                     print(f"📝 Note: {description}")
-
-                if args.showids and eventId:
-                    print(f"🆔 {eventId}")
-
+                if args.showids and event.get('id'):
+                    print(f"🆔 {event['id']}")
                 print("")
+
+        # now let's show birthdays for today
+
+        today = datetime.now().date()
+
+        birthdayEvents = service.events().list(
+            calendarId='primary',
+            timeMin=datetime.combine(today, datetime.min.time()).isoformat() + 'Z',
+            timeMax=datetime.combine(today, datetime.max.time()).isoformat() + 'Z',
+            q="🎂",
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+
+        birthdaysToday = birthdayEvents.get('items', [])
+
+        if birthdaysToday:
+            print("🎉 Birthday(s):")
+            for event in birthdaysToday:
+                summary = event.get('summary', '(No Title)')
+                start = event['start'].get('dateTime', event['start'].get('date'))
+                timeStr = FormatTime(start) if 'T' in start else "All Day"
+                print(f"{summary}\n")
 
     #
     # --week
