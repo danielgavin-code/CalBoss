@@ -772,8 +772,6 @@ def ShowBirthdaysThisWeek():
 
 ###############################################################################
 #
-<<<<<<< HEAD
-=======
 # Procedure   : ShowAllBirthdays()
 #
 # Description : Displays all birthdays on the calendar, grouped by month.
