@@ -841,7 +841,6 @@ def ShowAllBirthdays():
 
 ###############################################################################
 #
->>>>>>> 7cfe07b (CalBoss: Implimented --bday-show-all)
 # Procedure   : Main()
 #
 # Description : Entry point.
