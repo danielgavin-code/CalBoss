@@ -526,44 +526,57 @@ def AddNoteToEvent(eventId, note):
 #
 # Procedure   : SaveBirthday()
 #
-# Description : Add a birthday event to Google Calendar.
+# Description : Saves a birthday to Google Calendar as a 6 AM reminder.
 #
-# Input       : name  - Name of person
-#               month - Month (int)
-#               day   - Day (int)
+# Input       : name  - str : name of person
+#             : month - int : month (1–12)
+#             : day   - int : day (1–31)
 #
 # Returns     : -none-
 #
 ###############################################################################
-
 def SaveBirthday(name, month, day):
 
     service = GetCalendarService()
 
-    today   = datetime.now()
-    year    = today.year
-    dateStr = f"{year}-{month:02d}-{day:02d}"
+    now       = datetime.now()
+    eventDate = datetime(now.year, month, day, 6, 0, 0)
 
     event = {
-        "summary"    : f"🎂 {name}'s Birthday",
-        "start"      : {"date": dateStr},
-        "end"        : {"date": dateStr},
-        "recurrence" : ["RRULE:FREQ=YEARLY"],
-        "description": "Birthday Reminder",
+        'summary': f"🎂 {name}'s Birthday",
+        'description': 'Auto-added birthday reminder via CalBoss.',
+        'start': {
+            'dateTime': eventDate.isoformat(),
+            'timeZone': 'America/New_York'
+        },
+        'end': {
+            'dateTime': (eventDate + timedelta(hours=0)).isoformat(),
+            'timeZone': 'America/New_York'
+        },
+        'recurrence': [
+            'RRULE:FREQ=YEARLY'
+        ],
+        'reminders': {
+            'useDefault': False,
+            'overrides': [
+                {'method': 'popup', 'minutes': 0}
+            ]
+        },
+        'colorId': '7'
     }
 
     try:
-        service.events().insert(calendarId='primary', body=event).execute()
-        print(f"✅ [INFO] Birthday event created for {name} on {dateStr}")
+        event = service.events().insert(calendarId='primary', body=event).execute()
+        print(f"✅ [INFO] Birthday reminder created for {name} on {eventDate.strftime('%Y-%m-%d')}")
 
     except Exception as e:
-        print(f"❌ [ERROR] Failed to create birthday event: {e}")
+        print(f"❌ [ERROR] Failed to create birthday reminder for {name}: {e}")
 
 
 ###############################################################################
-#
+#           
 # Procedure   : RemoveBirthday()
-#
+#   
 # Description : Remove a birthday event from Google Calendar.
 #
 # Input       : name - Name of person
@@ -576,30 +589,32 @@ def RemoveBirthday(name):
 
     service = GetCalendarService()
 
-    # let's search 
     targetSummary = f"🎂 {name}'s Birthday"
 
     try:
+
+        now = datetime.utcnow().isoformat() + 'Z'
+
         eventsResult = service.events().list(
             calendarId='primary',
-            q=targetSummary,
-            singleEvents=False,
-            maxResults=10
+            timeMin=now,
+            maxResults=250,
+            singleEvents=False
         ).execute()
 
         events = eventsResult.get('items', [])
 
-        if not events:
-            print(f"❌ [INFO] No birthday found for {name}")
-            return
+        found = False
 
         for event in events:
-            if event.get('summary') == targetSummary:
+            if event.get('summary') == targetSummary and 'RRULE:FREQ=YEARLY' in str(event.get('recurrence', '')):
                 service.events().delete(calendarId='primary', eventId=event['id']).execute()
-                print(f"🗑️ [INFO] Birthday removed: {name}")
-                return
+                print(f"🗑️  [INFO] Birthday removed: {name}")
+                found = True
+                break
 
-        print(f"❌ [INFO] Birthday for {name} not found in matching results.")
+        if not found:
+            print(f"❌ [INFO] Birthday for {name} not found.")
 
     except Exception as e:
         print(f"❌ [ERROR] Failed to remove birthday: {e}")
