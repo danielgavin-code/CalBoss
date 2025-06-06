@@ -892,7 +892,7 @@ def ShowWeekSchedule():
         if summary.startswith('🎂'):
             summary = f"🎂 {summary[2:]}"
         else:
-            summary = f"EVENT: {summary}"
+            summary = f"{summary}"
 
         entry = f"🕘 {timeStr} - {summary}"
         if location:
