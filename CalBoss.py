@@ -542,7 +542,6 @@ def SaveBirthday(name, month, day):
 
     event = {
         'summary': f"🎂 {name}'s Birthday",
-        'description': 'Auto-added birthday reminder via CalBoss.',
         'start': {
             'dateTime': eventDate.isoformat(),
             'timeZone': 'America/New_York'
@@ -839,6 +838,79 @@ def ShowAllBirthdays():
 
 ###############################################################################
 #
+# Procedure   : ShowWeekSchedule()
+#
+# Description : Displays the week's schedule in a compact grouped format.
+#
+# Input       : -none-
+#
+# Returns     : -none-
+#
+###############################################################################
+def ShowWeekSchedule():
+    service = GetCalendarService()
+
+    now = datetime.now()
+
+    startOfWeek = now
+    endOfWeek   = now + timedelta(days=7)
+
+    eventsResult = service.events().list(
+        calendarId='primary',
+        timeMin=startOfWeek.isoformat() + 'Z',
+        timeMax=endOfWeek.isoformat() + 'Z',
+        singleEvents=True,
+        orderBy='startTime'
+    ).execute()
+
+    events = eventsResult.get('items', [])
+
+    if not events:
+        print("😴  No events scheduled this week.")
+        return
+
+    print(f"\n📆  Weekly Schedule Starting {now.strftime('%b %d')}\n")
+
+    days = {}
+
+    for event in events:
+        start = event['start'].get('dateTime', event['start'].get('date'))
+        dateObj = datetime.fromisoformat(start)
+        dayStr = dateObj.strftime('%A (%b %d)')
+
+        if dateObj.date() == (now + timedelta(days=1)).date():
+            dayStr = f"Tomorrow ({dateObj.strftime('%b %d')})"
+
+        if dayStr not in days:
+            days[dayStr] = []
+
+        timeStr = FormatTime(start) if 'T' in start else "All Day"
+        summary = event.get('summary', '(No Title)')
+        location = event.get('location', '')
+        description = event.get('description', '').strip()
+
+        if summary.startswith('🎂'):
+            summary = f"🎂 {summary[2:]}"
+        else:
+            summary = f"EVENT: {summary}"
+
+        entry = f"🕘 {timeStr} - {summary}"
+        if location:
+            entry += f"\n📍 {location}"
+        if description:
+            entry += f"\n📝 Note: {description}"
+
+        days[dayStr].append(entry)
+
+    for day in sorted(days.keys(), key=lambda d: datetime.strptime(d.split('(')[-1].replace(')', ''), "%b %d")):
+        print(f"📅  {day}")
+        for entry in days[day]:
+            print(entry)
+        print()
+
+
+###############################################################################
+#
 # Procedure   : Main()
 #
 # Description : Entry point.
@@ -940,40 +1012,7 @@ def Main():
     #
 
     elif args.week:
-        print(f"📆  Weekly Schedule Starting {datetime.now().strftime('%b %d')}\n")
-
-        service    = GetCalendarService()
-        weekEvents = FetchWeekEvents(service)
-
-        if not weekEvents:
-            print("😴  No events scheduled this week.")
-
-        else:
-            for day in weekEvents:
-                print(f"📅  {day}")
-
-                for event in weekEvents[day]:
-
-                    start       = event['start'].get('dateTime', event['start'].get('date'))
-                    summary     = event.get('summary', '(No Title)')
-                    location    = event.get('location', '')
-                    timeStr     = datetime.fromisoformat(start).strftime("%I:%M %p") if 'T' in start else "All Day"
-                    description = event.get("description", "").strip()
-
-                    print(f"🕘 {timeStr} - {summary}")
-
-                    if location:
-                        print(f"📍 {location}")
-
-                    eventId = event.get('id', None)
-
-                    if description:
-                        print(f"📝 Note: {description}")
-
-                    if args.showids and eventId:
-                        print(f"🆔 {eventId}")
-
-                    print("")
+        ShowWeekSchedule()
 
     #
     # --add
