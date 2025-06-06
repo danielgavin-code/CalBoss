@@ -772,6 +772,76 @@ def ShowBirthdaysThisWeek():
 
 ###############################################################################
 #
+<<<<<<< HEAD
+=======
+# Procedure   : ShowAllBirthdays()
+#
+# Description : Displays all birthdays on the calendar, grouped by month.
+#
+# Input       : -none-
+#
+# Returns     : -none-
+#
+###############################################################################
+
+def ShowAllBirthdays():
+
+    service = GetCalendarService()
+
+    now    = datetime.now()
+    future = now.replace(year=now.year + 1)
+
+    timeMin = now.isoformat() + 'Z'
+    timeMax = future.isoformat() + 'Z'
+
+    try:
+        eventsResult = service.events().list(
+            calendarId='primary',
+            timeMin=timeMin,
+            timeMax=timeMax,
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+
+        events = eventsResult.get('items', [])
+        birthdayEvents = [event for event in events if event.get('summary', '').startswith("🎂")]
+
+        if not birthdayEvents:
+            print("🎉 No birthdays found.")
+            return
+
+        monthBuckets = {}
+
+        for event in birthdayEvents:
+
+            start     = event['start'].get('dateTime', event['start'].get('date'))
+            dateObj   = datetime.fromisoformat(start)
+            monthName = dateObj.strftime('%B')
+            name      = event['summary'].replace("🎂 ", "").replace("'s Birthday", "")
+
+            if monthName not in monthBuckets:
+                monthBuckets[monthName] = []
+
+            monthBuckets[monthName].append((dateObj, name))
+
+        print("🎉 All Birthdays:")
+
+        for month in sorted(monthBuckets.keys(), key=lambda m: datetime.strptime(m, "%B").month):
+
+            print(f"\n📅 {month}:")
+
+            sortedBirthdays = sorted(monthBuckets[month], key=lambda x: x[0])
+
+            for dateObj, name in sortedBirthdays:
+                print(f"🎂 {name}'s Birthday - {dateObj.strftime('%b %d')}")
+
+    except Exception as e:
+        print(f"❌ [ERROR] Failed to fetch all birthdays: {e}")
+
+
+###############################################################################
+#
+>>>>>>> 7cfe07b (CalBoss: Implimented --bday-show-all)
 # Procedure   : Main()
 #
 # Description : Entry point.
@@ -1013,10 +1083,14 @@ def Main():
 
     #
     # --bday-remove
+    # --bday-show-all
     #
 
     if args.bday_remove:
         RemoveBirthday(args.bday_remove)
+
+    if args.bday_show_all:
+        ShowAllBirthdays()
 
 
 if __name__ == "__main__":
