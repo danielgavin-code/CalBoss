@@ -257,7 +257,7 @@ Examples:
   CalBoss --today
   CalBoss --add "Coffee with Sarah" --date 2025-05-24 --starttime 14:00 --endtime 15:00 --reminder 30m
   CalBoss --bday-add "Charmaine 07/03"
-  CalBoss --bday-show --week
+  CalBoss --bday-show-all
   CalBoss --catchup-suggest "Lisa, Nick, Aunt Gina"
   CalBoss --focus --week
 
@@ -306,7 +306,6 @@ def ParseArgs():
     parser.add_argument("--bday-remove",     type=str,            help="Remove a birthday by name.")
     parser.add_argument("--bday-show",       action="store_true", help="Show birthdays this month.")
     parser.add_argument("--bday-show-all",   action="store_true", help="Show all saved birthdays.")
-    parser.add_argument("--bday-show-week",  action="store_true", help="Show birthdays in the next 7 days.")
     parser.add_argument("--bday-show-today", action="store_true", help="Show today's birthdays.")
 
     # summary 
