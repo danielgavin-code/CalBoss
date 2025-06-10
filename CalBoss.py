@@ -301,12 +301,15 @@ def ParseArgs():
     parser.add_argument("--repeat", choices=["daily", "weekly", "monthly", "yearly"],
                                                             help="Set recurrence frequency for repeating events")
 
-    # birthday support 
+    # birthday
     parser.add_argument("--bday-add",        type=str,            help='Add a birthday (e.g. "Lisa 03/29").')
     parser.add_argument("--bday-remove",     type=str,            help="Remove a birthday by name.")
     parser.add_argument("--bday-show",       action="store_true", help="Show birthdays this month.")
     parser.add_argument("--bday-show-all",   action="store_true", help="Show all saved birthdays.")
     parser.add_argument("--bday-show-today", action="store_true", help="Show today's birthdays.")
+
+    # catch-up
+    parser.add_argument("--catchup", type=str, help="Schedule a catch-up event with someone.")
 
     # summary 
     parser.add_argument("--summary",    action="store_true", help="Show usage summary: hours booked vs free.")
@@ -802,7 +805,7 @@ def ShowAllBirthdays():
         "September": "🍂",
         "October":   "🎃",
         "November":  "🦃",
-        "December":   "🎄",
+        "December":  "🎄",
     }
 
     try:
@@ -831,7 +834,7 @@ def ShowAllBirthdays():
             name      = event['summary'].replace("🎂 ", "").replace("'s Birthday", "").strip()
 
             if monthName not in monthBuckets:
-                monthBuckets[monthName] = [] 
+                monthBuckets[monthName] = []
 
             monthBuckets[monthName].append((dateObj, name))
 
@@ -925,6 +928,47 @@ def ShowWeekSchedule():
 
 ###############################################################################
 #
+# Procedure   : AddCatchUpEvent() 
+#
+# Description : Add a catch-up event to the calendar. 
+#
+# Input       : name - string - person's name (i.e. John Smith) 
+#             : date - string - event date in format YYYY-MM-DD
+#
+# Returns     : -none-
+#
+###############################################################################
+
+def AddCatchUpEvent(name, date):   
+
+    service = GetCalendarService() 
+  
+    startDatetime = datetime.strptime(date + " 20:00", "%Y-%m-%d %H:%M")
+    endDatetime   = startDatetime.replace(hour=21)
+
+    event = {
+        "summary": f"🤖 Catch-Up: {name}",
+        "start": {
+            "dateTime": startDatetime.isoformat(),
+            "timeZone": "America/New_York"
+        },
+        "end": {
+            "dateTime": endDatetime.isoformat(),
+            "timeZone": "America/New_York"
+        },
+        "description": "Frequency: 18 months"
+    }
+
+    try:
+        createdEvent = service.events().insert(calendarId='primary', body=event).execute()
+        print(f"✅ Catch-Up scheduled with {name} on {date} at 8:00 PM.")
+
+    except Exception as e:
+        print(f"❌ [ERROR] Could not schedule catch-up: {e}")
+
+
+###############################################################################
+#
 # Procedure   : Main()
 #
 # Description : Entry point.
@@ -992,8 +1036,10 @@ def Main():
 
                 if location:
                     print(f"📍 {location}")
+
                 if description:
                     print(f"📝 Note: {description}")
+
                 if args.showids and event.get('id'):
                     print(f"🆔 {event['id']}")
                 print("")
@@ -1133,14 +1179,17 @@ def Main():
 
     #
     # --bday-remove
-    # --bday-show-all
     #
 
     if args.bday_remove:
         RemoveBirthday(args.bday_remove)
 
-    if args.bday_show_all:
-        ShowAllBirthdays()
+    #
+    # --catch-up-add
+    if args.catchup and args.date:
+        AddCatchUpEvent(args.catchup, args.date)
+        return
+
 
 
 if __name__ == "__main__":
