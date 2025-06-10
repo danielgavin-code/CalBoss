@@ -782,13 +782,28 @@ def ShowBirthdaysThisWeek():
 
 def ShowAllBirthdays():
 
-    service = GetCalendarService()
+    service = GetCalendarService()                          
 
     now    = datetime.now()
     future = now.replace(year=now.year + 1)
 
     timeMin = now.isoformat() + 'Z'
     timeMax = future.isoformat() + 'Z'
+
+    monthEmojis = {
+        "January":   "❄️",
+        "February":  "💘",
+        "March":     "☘️",
+        "April":     "🌧️",
+        "May":       "🌸",
+        "June":      "🌈",
+        "July":      "🎆",
+        "August":    "🏖️",
+        "September": "🍂",
+        "October":   "🎃",
+        "November":  "🦃",
+        "December":   "🎄",
+    }
 
     try:
         eventsResult = service.events().list(
@@ -813,18 +828,18 @@ def ShowAllBirthdays():
             start     = event['start'].get('dateTime', event['start'].get('date'))
             dateObj   = datetime.fromisoformat(start)
             monthName = dateObj.strftime('%B')
-            name      = event['summary'].replace("🎂 ", "").replace("'s Birthday", "")
+            name      = event['summary'].replace("🎂 ", "").replace("'s Birthday", "").strip()
 
             if monthName not in monthBuckets:
-                monthBuckets[monthName] = []
+                monthBuckets[monthName] = [] 
 
             monthBuckets[monthName].append((dateObj, name))
 
         print("🎉 All Birthdays:")
 
         for month in sorted(monthBuckets.keys(), key=lambda m: datetime.strptime(m, "%B").month):
-
-            print(f"\n📅 {month}:")
+            emoji = monthEmojis.get(month, "📅")
+            print(f"\n{emoji} {month}:")
 
             sortedBirthdays = sorted(monthBuckets[month], key=lambda x: x[0])
 
