@@ -27,6 +27,7 @@ import os.path
 import argparse
 
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 from googleapiclient.discovery      import build
 from google.auth.transport.requests import Request
@@ -98,11 +99,11 @@ def FetchTodayEvents(service):
     end   = (now + timedelta(days=1)).isoformat()
 
     eventResult = service.events().list(
-        calendarId='primary',
-        timeMin=start,
-        timeMax=end,
-        singleEvents=True,
-        orderBy='startTime'
+        calendarId   = 'primary',
+        timeMin      = start,
+        timeMax      = end,
+        singleEvents = True,
+        orderBy      = 'startTime'
     ).execute()
 
     allEvents = eventResult.get('items', [])
@@ -143,11 +144,11 @@ def FetchWeekEvents(service):
     end   = (now + timedelta(days=7)).isoformat()
 
     eventResult = service.events().list(
-        calendarId='primary',
-        timeMin=start,
-        timeMax=end,
-        singleEvents=True,
-        orderBy='startTime'
+        calendarId   = 'primary',
+        timeMin      = start,
+        timeMax      = end,
+        singleEvents = True,
+        orderBy      = 'startTime'
     ).execute()
 
     allEvents     = eventResult.get('items', [])
@@ -310,6 +311,7 @@ def ParseArgs():
 
     # catch-up
     parser.add_argument("--catchup", type=str, help="Schedule a catch-up event with someone.")
+    parser.add_argument("--catchup-suggest", metavar="NAMES", type=str, help='Suggest when to catch up with each person (comma-separated). Example: "Lisa, Nick, Aunt Gina"')
 
     # summary 
     parser.add_argument("--summary",    action="store_true", help="Show usage summary: hours booked vs free.")
@@ -595,10 +597,10 @@ def RemoveBirthday(name):
         now = datetime.utcnow().isoformat() + 'Z'
 
         eventsResult = service.events().list(
-            calendarId='primary',
-            timeMin=now,
-            maxResults=250,
-            singleEvents=False
+            calendarId   = 'primary',
+            timeMin      = now,
+            maxResults   = 250,
+            singleEvents = False
         ).execute()
 
         events = eventsResult.get('items', [])
@@ -642,12 +644,12 @@ def ShowBirthdaysThisMonth():
 
     try:
         eventsResult = service.events().list(
-            calendarId='primary',
-            timeMin=monthStart,
-            timeMax=monthEnd,
-            singleEvents=True,
-            maxResults=100,
-            orderBy='startTime'
+            calendarId   = 'primary',
+            timeMin      = monthStart,
+            timeMax      = monthEnd,
+            singleEvents = True,
+            maxResults   = 100,
+            orderBy      = 'startTime'
         ).execute()
 
         events = eventsResult.get('items', [])
@@ -695,12 +697,12 @@ def ShowTodaysBirthdays():
 
     try:
         eventsResult = service.events().list(
-            calendarId='primary',
-            timeMin=todayStart,
-            timeMax=todayEnd,
-            singleEvents=True,
-            maxResults=20,
-            orderBy='startTime'
+            calendarId   = 'primary',
+            timeMin      = todayStart,
+            timeMax      = todayEnd,
+            singleEvents = True,
+            maxResults   = 20,
+            orderBy      ='startTime'
         ).execute()
 
         events = eventsResult.get('items', [])
@@ -746,11 +748,11 @@ def ShowBirthdaysThisWeek():
 
     try:
         eventsResult = service.events().list(
-            calendarId='primary',
-            timeMin=timeMin,
-            timeMax=timeMax,
-            singleEvents=True,
-            orderBy='startTime'
+            calendarId   = 'primary',
+            timeMin      = timeMin,
+            timeMax      = timeMax,
+            singleEvents = True,
+            orderBy      = 'startTime'
         ).execute()
 
         events = eventsResult.get('items', [])
@@ -809,12 +811,12 @@ def ShowAllBirthdays():
     }
 
     try:
-        eventsResult = service.events().list(
-            calendarId='primary',
-            timeMin=timeMin,
-            timeMax=timeMax,
-            singleEvents=True,
-            orderBy='startTime'
+        eventsResult     = service.events().list(
+            calendarId   = 'primary',
+            timeMin      = timeMin,
+            timeMax      = timeMax,
+            singleEvents = True,
+            orderBy      = 'startTime'
         ).execute()
 
         events = eventsResult.get('items', [])
@@ -859,25 +861,26 @@ def ShowAllBirthdays():
 #
 # Description : Displays the week's schedule in a compact grouped format.
 #
-# Input       : -none-
+# Input       : args - parsed CLI arguments
 #
 # Returns     : -none-
 #
 ###############################################################################
-def ShowWeekSchedule():
+
+def ShowWeekSchedule(args):
+
     service = GetCalendarService()
 
-    now = datetime.now()
-
+    now         = datetime.now()
     startOfWeek = now
     endOfWeek   = now + timedelta(days=7)
 
     eventsResult = service.events().list(
-        calendarId='primary',
-        timeMin=startOfWeek.isoformat() + 'Z',
-        timeMax=endOfWeek.isoformat() + 'Z',
-        singleEvents=True,
-        orderBy='startTime'
+        calendarId   = 'primary',
+        timeMin      = startOfWeek.isoformat() + 'Z',
+        timeMax      = endOfWeek.isoformat() + 'Z',
+        singleEvents = True,
+        orderBy      = 'startTime'
     ).execute()
 
     events = eventsResult.get('items', [])
@@ -891,9 +894,10 @@ def ShowWeekSchedule():
     days = {}
 
     for event in events:
-        start = event['start'].get('dateTime', event['start'].get('date'))
+
+        start   = event['start'].get('dateTime', event['start'].get('date'))
         dateObj = datetime.fromisoformat(start)
-        dayStr = dateObj.strftime('%A (%b %d)')
+        dayStr  = dateObj.strftime('%A (%b %d)')
 
         if dateObj.date() == (now + timedelta(days=1)).date():
             dayStr = f"Tomorrow ({dateObj.strftime('%b %d')})"
@@ -901,10 +905,11 @@ def ShowWeekSchedule():
         if dayStr not in days:
             days[dayStr] = []
 
-        timeStr = FormatTime(start) if 'T' in start else "All Day"
-        summary = event.get('summary', '(No Title)')
-        location = event.get('location', '')
+        timeStr     = FormatTime(start) if 'T' in start else "All Day"
+        summary     = event.get('summary', '(No Title)')
+        location    = event.get('location', '')
         description = event.get('description', '').strip()
+        eventId    = event.get('id', '')
 
         if summary.startswith('🎂'):
             summary = f"🎂 {summary[2:]}"
@@ -912,11 +917,15 @@ def ShowWeekSchedule():
             summary = f"{summary}"
 
         entry = f"🕘 {timeStr} - {summary}"
+
         if location:
             entry += f"\n📍 {location}"
+
         if description:
             entry += f"\n📝 Note: {description}"
 
+        if args.showids and eventId:
+            entry += f"\n🆔 Event ID: {eventId}"
         days[dayStr].append(entry)
 
     for day in sorted(days.keys(), key=lambda d: datetime.strptime(d.split('(')[-1].replace(')', ''), "%b %d")):
@@ -965,6 +974,97 @@ def AddCatchUpEvent(name, date):
 
     except Exception as e:
         print(f"❌ [ERROR] Could not schedule catch-up: {e}")
+
+
+###############################################################################
+#
+# Procedure   : SuggestCatchUps()
+#
+# Description : Scan calendar for existing catch-up events.
+#             : - If person has past catch-up, suggest follow-up +/- 60 days. 
+#             : - If none, suggest a catch-up 6 months from today.
+#             : - Shows history for each person.
+#
+# Input       : names (optional list of names to filter by)
+#
+# Returns     : -none-
+#
+###############################################################################
+
+def SuggestCatchUps(names=None):
+
+    service = GetCalendarService()
+
+    now = datetime.utcnow().isoformat() + 'Z'
+
+    try:
+        eventsResult = service.events().list(
+            calendarId   = 'primary',
+            timeMin      = '2000-01-01T00:00:00Z',
+            maxResults   = 2500,
+            singleEvents = True,
+            orderBy      = 'startTime',
+            q            = "🤖 Catch-Up:"
+        ).execute()
+
+        events       = eventsResult.get('items', [])
+        latestEvents = {}
+
+        for event in events:
+
+            summary = event.get('summary', '').strip()
+
+            if not summary.startswith("🤖 Catch-Up:"):
+                continue
+
+            name  = summary.replace("🤖 Catch-Up:", "").strip()
+            start = event['start'].get('dateTime', event['start'].get('date'))
+
+            try:
+                dt = datetime.fromisoformat(start)
+
+            except:
+                continue
+
+            desc = event.get('description', '').lower()
+
+            frequency = 18
+
+            if 'frequency:' in desc:
+
+                try:
+                    freq_str = desc.split("frequency:")[1].split("months")[0].strip()
+                    frequency = int(freq_str)
+
+                except:
+                    pass
+
+            if name not in latestEvents or dt > latestEvents[name]['date']:
+                latestEvents[name] = {'date': dt, 'frequency': frequency}
+
+        print("📬 Suggested Catch-Ups:\n")
+
+        if names:
+
+            for name in names:
+                if name in latestEvents:
+                    data = latestEvents[name]
+                    print(f"🔍 Found past catch-up with {name} on {data['date'].strftime('%b %d, %Y')}")
+                    salted = data['date'] + relativedelta(months=data['frequency']) + timedelta(days=random.randint(-60, 60))
+                    print(f"👤 {name} — Next suggested catch-up: {salted.strftime('%b %d, %Y')}\n")
+
+                else:
+                    print(f"❓ No past catch-up found for {name}.")
+                    suggested = datetime.now() + relativedelta(months=6)
+                    print(f"👤 {name} — Suggested default catch-up: {suggested.strftime('%b %d, %Y')}\n")
+
+        else:
+            for name, data in latestEvents.items():
+                salted = data['date'] + relativedelta(months=data['frequency']) + timedelta(days=random.randint(-60, 60))
+                print(f"👤 {name} — Next suggested catch-up: {salted.strftime('%b %d, %Y')}")
+
+    except Exception as e:
+        print(f"❌ [ERROR] Failed to generate suggestions: {e}")
 
 
 ###############################################################################
@@ -1048,22 +1148,24 @@ def Main():
 
         today = datetime.now().date()
 
-        birthdayEvents = service.events().list(
-            calendarId='primary',
-            timeMin=datetime.combine(today, datetime.min.time()).isoformat() + 'Z',
-            timeMax=datetime.combine(today, datetime.max.time()).isoformat() + 'Z',
-            q="🎂",
-            singleEvents=True,
-            orderBy='startTime'
+        birthdayEvents   = service.events().list(
+            calendarId   = 'primary',
+            timeMin      = datetime.combine(today, datetime.min.time()).isoformat() + 'Z',
+            timeMax      = datetime.combine(today, datetime.max.time()).isoformat() + 'Z',
+            q            = "🎂",
+            singleEvents = True,
+            orderBy      = 'startTime'
         ).execute()
 
         birthdaysToday = birthdayEvents.get('items', [])
 
         if birthdaysToday:
+
             print("🎉 Birthday(s):")
+
             for event in birthdaysToday:
                 summary = event.get('summary', '(No Title)')
-                start = event['start'].get('dateTime', event['start'].get('date'))
+                start   = event['start'].get('dateTime', event['start'].get('date'))
                 timeStr = FormatTime(start) if 'T' in start else "All Day"
                 print(f"{summary}\n")
 
@@ -1072,7 +1174,7 @@ def Main():
     #
 
     elif args.week:
-        ShowWeekSchedule()
+        ShowWeekSchedule(args)
 
     #
     # --add
@@ -1186,8 +1288,15 @@ def Main():
 
     #
     # --catch-up-add
+    # --catch-up-suggest
+    #
     if args.catchup and args.date:
         AddCatchUpEvent(args.catchup, args.date)
+        return
+
+    if args.catchup_suggest:
+        names = [name.strip() for name in args.catchup_suggest.split(",")]
+        SuggestCatchUps(names)
         return
 
 
