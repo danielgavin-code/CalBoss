@@ -1116,7 +1116,7 @@ def Main():
     #
 
     if args.today:
-        print(f"📅  Today’s Schedule ({datetime.now().strftime('%b %d')})\n")
+        print(f"📅  Today’s Schedule ({datetime.now().strftime('%b %d')}):")
 
         service = GetCalendarService()
         events = FetchTodayEvents(service)
@@ -1142,7 +1142,7 @@ def Main():
 
                 if args.showids and event.get('id'):
                     print(f"🆔 {event['id']}")
-                print("")
+                #print("")
 
         # now let's show birthdays for today
 
@@ -1161,13 +1161,13 @@ def Main():
 
         if birthdaysToday:
 
-            print("🎉 Birthday(s):")
+            print("\n🎉 Birthday(s):")
 
             for event in birthdaysToday:
                 summary = event.get('summary', '(No Title)')
                 start   = event['start'].get('dateTime', event['start'].get('date'))
                 timeStr = FormatTime(start) if 'T' in start else "All Day"
-                print(f"{summary}\n")
+                print(f"{summary}")
 
     #
     # --week
