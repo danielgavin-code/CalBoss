@@ -26,7 +26,7 @@ import random
 import os.path
 import argparse
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dateutil.relativedelta import relativedelta
 
 from googleapiclient.discovery      import build
@@ -233,7 +233,7 @@ Usage:
 
 👫 Catch-Up Mode:
   --catchup-suggest "<Name, ...>"  Suggests when to check in with each person.
-  --catchup-add "<Name>" 
+  --catchup "<Name>" 
        --date YYYY-MM-DD           Schedule a personal check-in. Adds a [Catch-Up] event.
        [--reminder <time>]         (Optional) Set a pre-check-in reminder.
   --catchup-list                   Show upcoming catch-up events.
@@ -312,6 +312,7 @@ def ParseArgs():
     # catch-up
     parser.add_argument("--catchup", type=str, help="Schedule a catch-up event with someone.")
     parser.add_argument("--catchup-suggest", metavar="NAMES", type=str, help='Suggest when to catch up with each person (comma-separated). Example: "Lisa, Nick, Aunt Gina"')
+    parser.add_argument("--catchup-list", action="store_true", help="List upcoming catch-up events")
 
     # summary 
     parser.add_argument("--summary",    action="store_true", help="Show usage summary: hours booked vs free.")
@@ -1069,6 +1070,54 @@ def SuggestCatchUps(names=None):
 
 ###############################################################################
 #
+# Procedure   : ListCatchUps()
+#
+# Description : Lists upcoming catch-up events.
+#
+# Input       : -none-
+#
+# Returns     : -none-
+#
+###############################################################################
+
+def ListCatchUps():
+
+    service = GetCalendarService()
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    try:
+        eventsResult = service.events().list(
+            calendarId   = 'primary',
+            timeMin      = now,
+            maxResults   = 100,
+            singleEvents = True,
+            orderBy      = 'startTime',
+            q            = "🤖 Catch-Up:"
+        ).execute()
+
+        events = eventsResult.get('items', [])
+
+        if not events:
+            print("📭 No upcoming catch-up events.")
+            return
+
+        print("📅 Upcoming Catch-Up Events:\n")
+
+        for event in events:
+
+            name  = event.get('summary', '').replace("🤖 Catch-Up: ", "")
+            start = event['start'].get('dateTime', event['start'].get('date'))
+            dt    = datetime.fromisoformat(start)
+
+            print(f"👤 {name} — {dt.strftime('%b %d, %Y @ %I:%M %p')}")
+
+    except Exception as e:
+        print(f"❌ [ERROR] Failed to list catch-ups: {e}")
+
+
+###############################################################################
+#
 # Procedure   : Main()
 #
 # Description : Entry point.
@@ -1287,8 +1336,9 @@ def Main():
         RemoveBirthday(args.bday_remove)
 
     #
-    # --catch-up-add
+    # --catchup
     # --catch-up-suggest
+    # --catchup-list
     #
     if args.catchup and args.date:
         AddCatchUpEvent(args.catchup, args.date)
@@ -1297,6 +1347,10 @@ def Main():
     if args.catchup_suggest:
         names = [name.strip() for name in args.catchup_suggest.split(",")]
         SuggestCatchUps(names)
+        return
+
+    if args.catchup_list:
+        ListCatchUps()
         return
 
 
