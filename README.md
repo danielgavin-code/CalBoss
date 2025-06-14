@@ -6,15 +6,15 @@ The fun feature added is catchup tool to allow you put reminders to reconnect wi
 
 **💼 What It Can Do:**
 
-⏰ View today's schedule or your whole week
-📝 Add events with optional reminders, locations, and repeat settings
-🎂 Track birthdays (and show them grouped by month)
-🧑‍🤝‍🧑 Suggest when to check in with friends you’ve lost touch with (Catch-Up Mode!)
-🗑️ Delete events by ID
-🔍 Search your calendar by keyword (coming soon)
+* ⏰ View today's schedule or your whole week
+* 📝 Add events with optional reminders, locations, and repeat settings
+* 🎂 Track birthdays (and show them grouped by month)
+* 🧑‍🤝‍🧑 Suggest when to check in with friends you’ve lost touch with (Catch-Up Mode!)
+* 🗑️ Delete events by ID
+* 🔍 Search your calendar by keyword (coming soon)
 
-<pre> 
-CalBoss: Google calendar integration for the command line. 📅 ✨ 
+
+<pre>CalBoss: Google calendar integration for the command line. 📅 ✨ 
 
 Usage: CalBoss
   [options]
