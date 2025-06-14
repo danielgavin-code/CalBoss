@@ -14,6 +14,12 @@
 #     Author   : Daniel Gavin
 #     Changes  : New file.
 #
+#     Date     : 14 June 2025
+#     Author   : Daniel Gavin
+#     Changes  : Disabled the following for a future release ...  
+#              : - Overview & Planning.
+#              : - Other.
+#
 #     Date     :
 #     Author   :
 #     Changes  :
@@ -33,7 +39,7 @@ from googleapiclient.discovery      import build
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow      import InstalledAppFlow
 
-VERSION = 'v0.1.0dev-beta'
+VERSION = '1.01'
 SCOPES  = ['https://www.googleapis.com/auth/calendar']
 
 ###############################################################################
@@ -198,11 +204,11 @@ def PrintHelp():
       "☕ Schedule your breaks. No one hustles non-stop without burning out.",
       "📍 Use event notes to track locations, URLs, or secret food spots.",
       "👀 Check your week every Monday. Be proactive, not reactive.",
-      "🧼 Keep a backup with --export — you future self will thank you.",
+      #"🧼 Keep a backup with --export — you future self will thank you.",
       "⏰ Reminders aren’t for the forgetful — they’re for the focused.",
       "📆 If it’s not in the calendar, it’s not happening.",
-      "🔎 Use --search to find events fast — one should not have to battle a web gui.",
-      "🧠 Use --search-all to pull past and future events.",
+      #"🔎 Use --search to find events fast — one should not have to battle a web gui.",
+      #"🧠 Use --search-all to pull past and future events.",
       "🛑 Book a full day with --allday"]
 
     helpText = """\
@@ -238,29 +244,32 @@ Usage:
        [--reminder <time>]         (Optional) Set a pre-check-in reminder.
   --catchup-list                   Show upcoming catch-up events.
   --catchup-clear "<Name>"         Remove someone from your catch-up list.
+"""
 
-📊 Overview & Planning:
-  --summary                        Show usage summary: hours booked vs free.
-  --focus                          Filter for priority events only.
-  --insights                       Analyze patterns (best/worst days).
-  --vibe-check                     Show today’s time breakdown + free hours.
-  --search "<keyword>"             Search upcoming events by keyword in title, notes, or location.
-  --search-all "<keyword>"         Search your full calendar — past, present, future. Total recall.
-  --showids                        Display event IDs in schedule output for reference.
+#
+# TODO: enable these functions
+#
 
-🔧 Other:
-  --export                         Save all data to calboss-backup.json.
-  --import <file>                  Load data from a backup.
-  --version                        Show CalBoss version.
-  --help                           You’re looking at it.
+#📊 Overview & Planning:
+#  --insights                       Analyze patterns (best/worst days).
+#  --search "<keyword>"             Search upcoming events by keyword in title, notes, or location.
+#  --search-all "<keyword>"         Search your full calendar — past, present, future. Total recall.
+#  --showids                        Display event IDs in schedule output for reference.
+#
+#🔧 Other:
+#  --export                         Save all data to calboss-backup.json.
+#  --import <file>                  Load data from a backup.
+#  --version                        Show CalBoss version.
+#  --help                           You’re looking at it.
+#
 
+    helpText += """
 Examples:
   CalBoss --today
   CalBoss --add "Coffee with Sarah" --date 2025-05-24 --starttime 14:00 --endtime 15:00 --reminder 30m
   CalBoss --bday-add "Charmaine 07/03"
   CalBoss --bday-show-all
   CalBoss --catchup-suggest "Lisa, Nick, Aunt Gina"
-  CalBoss --focus --week
 
 ✨ Pro Tip:
 """
@@ -313,6 +322,7 @@ def ParseArgs():
     parser.add_argument("--catchup", type=str, help="Schedule a catch-up event with someone.")
     parser.add_argument("--catchup-suggest", metavar="NAMES", type=str, help='Suggest when to catch up with each person (comma-separated). Example: "Lisa, Nick, Aunt Gina"')
     parser.add_argument("--catchup-list", action="store_true", help="List upcoming catch-up events")
+    parser.add_argument("--catchup-clear", type=str, help="Remove all catch-up events for this person")
 
     # summary 
     parser.add_argument("--summary",    action="store_true", help="Show usage summary: hours booked vs free.")
@@ -1118,6 +1128,49 @@ def ListCatchUps():
 
 ###############################################################################
 #
+# Procedure   : ClearCatchUpEvents()
+#
+# Description : Deletes all future catch-up events for a given name
+#
+# Input       : name (str)
+#
+# Returns     : None
+#
+###############################################################################
+
+def ClearCatchUpEvents(name):
+
+    service = GetCalendarService()
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    try:
+        eventsResult = service.events().list(
+            calendarId   = 'primary',
+            timeMin      = now,
+            maxResults   = 2500,
+            singleEvents =  True,
+            q            = f"🤖 Catch-Up: {name}",
+            orderBy      = 'startTime'
+        ).execute()
+
+        events = eventsResult.get('items', [])
+
+        if not events:
+            print(f"📭 No upcoming catch-up events found for {name}.")
+            return
+
+        for event in events:
+            service.events().delete(calendarId='primary', eventId=event['id']).execute()
+
+        print(f"🗑️ Cleared all catch-up events for {name}.")
+
+    except Exception as e:
+        print(f"❌ [ERROR] Failed to clear catch-ups: {e}")
+
+
+###############################################################################
+#
 # Procedure   : Main()
 #
 # Description : Entry point.
@@ -1339,6 +1392,7 @@ def Main():
     # --catchup
     # --catch-up-suggest
     # --catchup-list
+    # --catchup-clear
     #
     if args.catchup and args.date:
         AddCatchUpEvent(args.catchup, args.date)
@@ -1352,6 +1406,11 @@ def Main():
     if args.catchup_list:
         ListCatchUps()
         return
+
+    if args.catchup_clear:
+        ClearCatchUpEvents(args.catchup_clear)
+        return
+
 
 
 
