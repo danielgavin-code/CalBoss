@@ -69,7 +69,8 @@ python-dateutil</pre>
 
 **📦 Installation**
 
-<pre> git clone https://github.com/danielgavin-code/CalBoss.git cd CalBoss pip install -r requirements.txt </pre>
+<pre>git clone https://github.com/danielgavin-code/CalBoss.git 
+cd CalBoss pip install -r requirements.txt </pre>
 
 
 
