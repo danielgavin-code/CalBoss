@@ -86,8 +86,14 @@ Run CalBoss once and follow the browser-based authentication flow
 **🧪 Sample Workflows**
 
 ☕ Add an event:
-CalBoss.py --add "Coffee with Sarah" --date 2025-06-14 --starttime 15:00 --endtime 16:00
+
+<pre>CalBoss.py --add "Coffee with Sarah" --date 2025-06-14 --starttime 15:00 --endtime 16:00</pre>
+
 🎂 See birthdays this month:
-CalBoss.py --bday-show
+
+<pre>CalBoss.py --bday-show</pre>
+
 🤖 Suggest catch-up schedule:
-CalBoss.py --catchup-suggest "Aunt Gina, Lisa"
+
+<pre>CalBoss.py --catchup-suggest "Aunt Gina, Lisa"</pre>
+
