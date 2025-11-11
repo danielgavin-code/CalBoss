@@ -1,20 +1,26 @@
-**📅 CalBoss: Command-Line Calendar Power Tool ✨**
+**📅 CalBoss: Command-Line Tool That to Not Lose the Plot ☕️**
 
-CalBoss is your personal calendar assistant for the terminal.
-It integrates with Google Calendar to help you plan, schedule, and celebrate — all from your command line.
-The fun feature added is catchup tool to allow you put reminders to reconnect with friends at the command prompt.
+* CalBoss lives in your terminal ... no bells, no fluff.  
+* It does the calendar stuff (plan your week, remember birthdays, etc.), and also remindds you to check in with others before too much time passes.
+* Its for those who hang out on the command line, don't need a productivity app, but want a poke to send that check-in text.
 
-**💼 What It Can Do:**
 
-* ⏰ View today's schedule or your whole week
+**💼 What It Can Do for You:**
+
+* ⏰ See what your day/week/etc. looks like.
 * 📝 Add events with optional reminders, locations, and repeat settings
-* 🎂 Track birthdays (and show them grouped by month)
-* 🧑‍🤝‍🧑 Suggest when to check in with friends you’ve lost touch with (Catch-Up Mode!)
-* 🗑️ Delete events by ID
-* 🔍 Search your calendar by keyword (coming soon)
+* 🎂 Remember birthdays (and show them grouped by month)
+* 🧑‍🤝‍🧑 Stay connected with friends using "Catch-Up Mode"
+* 🗑️ Quickly remove events that are not needed
+* 🔍 *Search your calendar by keyword (coming soon)*
 
+## 🧠 Why It Exists
 
-<pre>CalBoss: Google calendar integration for the command line. 📅 ✨ 
+* The command line should be a warm and welcoming place that includes others (even those who don't hang out here).
+* I haven't found a good command line calendar manager (so I built one).
+
+## 🚀 Usage: CalBoss
+<pre>CalBoss: Google calendar integration for the command line. 📅 ☕️ 
 
 Usage: CalBoss
   [options]
@@ -30,10 +36,10 @@ Usage: CalBoss
   --location "<place>" Include a location with your event.
   --reminder <duration> Reminder before event (e.g. 15m, 1h).
   --remove <event_id> Delete an event by ID.
-  --note <event_id> "<note>" Add a note to an existing event.
+  --note <event_id> "<note>"  Add a note to an existing event.
   --repeat Repeat events (e.g. daily, weekly, monthly, yearly).
 
-🎂 Birthday:
+🎂 Birthday Tracking:
   --bday-add "<Name> MM/DD" Add a birthday (auto-repeats yearly).
   --bday-remove "<Name>" Remove a birthday.
   --bday-show Show birthdays this month. 
@@ -53,7 +59,6 @@ Examples:
   CalBoss --bday-add "Charmaine 07/03" CalBoss --bday-show --all CalBoss --catchup-suggest "Lisa, Nick, Aunt Gina" 
     
 ✨ Pro Tip: 👀 Check your week every Monday. Be proactive, not reactive. </pre>
-
 
 
 **🛠️ Requirements**
@@ -76,10 +81,10 @@ cd CalBoss pip install -r requirements.txt </pre>
 
 **🔑 Setup Google Calendar Access**
 
-Follow instructions to enable the Google Calendar API:
-Google Calendar API Quickstart
-Download your credentials.json and place it in the CalBoss/ directory
-Run CalBoss once and follow the browser-based authentication flow
+Follow these instructions to enable the Google Calendar API:
+* Google Calendar API Quickstart
+* Download your credentials.json and place it in the CalBoss/ directory
+* Run CalBoss once and follow the browser-based authentication flow
 
 
 
