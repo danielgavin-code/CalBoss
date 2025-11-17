@@ -1,11 +1,11 @@
-**📅 CalBoss: Command-Line Tool That to Not Lose the Plot ☕️**
+**📅 CalBoss: Command-Line Tool That Helps Not Lose the Plot ☕️**
 
 * CalBoss lives in your terminal ... no bells, no fluff.  
 * It does the calendar stuff (plan your week, remember birthdays, etc.), and also remindds you to check in with others before too much time passes.
 * Its for those who hang out on the command line, don't need a productivity app, but want a poke to send that check-in text.
 
 
-**💼 What It Can Do for You:**
+**💼 What It Can Do:**
 
 * ⏰ See what your day/week/etc. looks like.
 * 📝 Add events with optional reminders, locations, and repeat settings
